@@ -1,0 +1,14 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# tfvars (contains secrets)
+terraform.tfvars
+
+# OS
+.DS_Store
+
+# Logs
+*.log
