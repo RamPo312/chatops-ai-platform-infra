@@ -17,26 +17,26 @@ The setup is split into two layers to keep things clean and reusable:
 
 ## 📁 Project Structure
 
-
+```
 chatops-ai-platform-infra/
 │
 ├── bootstrap/
-│ └── backend-state/
-│ ├── main.tf
-│ ├── provider.tf
-│ ├── variables.tf
-│ └── outputs.tf
+│   └── backend-state/
+│       ├── main.tf
+│       ├── provider.tf
+│       ├── variables.tf
+│       └── outputs.tf
 │
 ├── environments/
-│ └── dev/
-│ ├── main.tf
-│ ├── provider.tf
-│ ├── variables.tf
-│ ├── terraform.tfvars.example
-│ └── outputs.tf
+│   └── dev/
+│       ├── main.tf
+│       ├── provider.tf
+│       ├── variables.tf
+│       ├── terraform.tfvars.example
+│       └── outputs.tf
 │
 └── .gitignore
-
+```
 
 ---
 
@@ -73,12 +73,12 @@ This step provisions:
 - S3 bucket → stores Terraform state  
 - DynamoDB table → handles state locking  
 
-
+```bash
 cd bootstrap/backend-state
 
 terraform init
 terraform apply
-
+```
 
 ---
 
@@ -86,13 +86,13 @@ terraform apply
 
 Once backend is ready, infrastructure can be deployed.
 
-
+```bash
 cd environments/dev
 
 terraform init
 terraform plan
 terraform apply
-
+```
 
 This step creates:
 
@@ -109,9 +109,9 @@ This step creates:
 
 To clean up resources and avoid AWS costs:
 
-
+```bash
 terraform destroy
-
+```
 
 ---
 
@@ -119,10 +119,10 @@ terraform destroy
 
 Instead of hardcoding values, I used `terraform.tfvars`.
 
-
+```bash
 cp terraform.tfvars.example terraform.tfvars
 vim terraform.tfvars
-
+```
 
 This makes it easier to manage different environments.
 
@@ -149,9 +149,8 @@ This makes it easier to manage different environments.
 
 ## ⚠️ Challenges I faced
 
-This is where most of the real learning happened.
-
 ### VPC deletion issues
+
 - `terraform destroy` was failing  
 - Root cause → dependent resources like NAT Gateway and ENIs  
 
@@ -162,6 +161,7 @@ Fix:
 ---
 
 ### Subnet tagging issues
+
 - ALB was not getting created in EKS  
 
 Root cause:
@@ -169,13 +169,15 @@ Root cause:
 
 Fix:
 
+```
 kubernetes.io/role/elb = 1
 kubernetes.io/role/internal-elb = 1
-
+```
 
 ---
 
 ### IAM / EKS permission issues
+
 - EKS components failed during setup  
 
 Root cause:
@@ -189,22 +191,19 @@ Fix:
 
 ## 🧪 Useful Troubleshooting Commands
 
-Check VPC
-
+```bash
+# Check VPC
 aws ec2 describe-vpcs
 
-Check subnets
-
+# Check subnets
 aws ec2 describe-subnets
 
-Check load balancers
-
+# Check load balancers
 aws elbv2 describe-load-balancers
 
-Check network interfaces
-
+# Check network interfaces
 aws ec2 describe-network-interfaces
-
+```
 
 ---
 
@@ -220,4 +219,4 @@ aws ec2 describe-network-interfaces
 
 ## 👨‍💻
 
-Ram Polarapu  
+Ram Polarapu
