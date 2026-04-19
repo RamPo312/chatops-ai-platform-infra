@@ -1,144 +1,223 @@
-# 🚀 ChatOps AI Platform – Terraform Infrastructure
+# 🚀 ChatOps AI Platform — Terraform Infrastructure
 
-## 📌 Overview
+---
 
-This repository contains Terraform code to provision and manage infrastructure for the **ChatOps AI Platform** on AWS.
+## 🧠 Overview
 
-It follows a structured approach:
+This repository contains the Terraform setup used to provision the AWS infrastructure for the ChatOps AI Platform.
 
-* **Bootstrap layer** → Creates remote backend (S3 + DynamoDB)
-* **Environment layer** → Deploys actual infrastructure (EKS, networking, etc.)
+While building the application, I didn’t want to rely on manual setup in AWS. So I structured this repo to manage everything using Terraform — including networking, IAM, and the EKS cluster.
+
+The setup is split into two layers to keep things clean and reusable:
+
+- Bootstrap layer → sets up remote backend (S3 + DynamoDB)  
+- Environment layer → provisions actual infrastructure (EKS, VPC, etc.)  
 
 ---
 
 ## 📁 Project Structure
 
-```
+
 chatops-ai-platform-infra/
 │
 ├── bootstrap/
-│   └── backend-state/
-│       ├── main.tf
-│       ├── provider.tf
-│       ├── variables.tf
-│       └── outputs.tf
+│ └── backend-state/
+│ ├── main.tf
+│ ├── provider.tf
+│ ├── variables.tf
+│ └── outputs.tf
 │
 ├── environments/
-│   └── dev/
-│       ├── main.tf
-│       ├── provider.tf
-│       ├── variables.tf
-│       ├── terraform.tfvars.example
-│       └── outputs.tf
+│ └── dev/
+│ ├── main.tf
+│ ├── provider.tf
+│ ├── variables.tf
+│ ├── terraform.tfvars.example
+│ └── outputs.tf
 │
 └── .gitignore
-```
+
 
 ---
 
 ## ⚙️ Prerequisites
 
-* Terraform ≥ 1.5
-* AWS CLI configured
-* IAM permissions for:
-
-  * S3
-  * DynamoDB
-  * EKS
-  * VPC
+- Terraform ≥ 1.5  
+- AWS CLI configured (`aws configure`)  
+- IAM permissions for:
+  - S3  
+  - DynamoDB  
+  - EKS  
+  - VPC  
 
 ---
 
 ## 🔐 Important Notes
 
-### ❌ Do NOT commit:
+The following files are intentionally ignored:
 
-* `.terraform/`
-* `terraform.tfstate`
-* `terraform.tfvars`
+- `.terraform/`  
+- `terraform.tfstate`  
+- `terraform.tfvars`  
 
-These are ignored via `.gitignore`.
+This avoids leaking state data and sensitive values.
 
 ---
 
 ## 🧱 Step 1 — Bootstrap Backend (Run once)
 
-This creates:
+Before deploying infrastructure, I created a remote backend.
 
-* S3 bucket (Terraform state)
-* DynamoDB table (state locking)
+This step provisions:
 
-```bash
+- S3 bucket → stores Terraform state  
+- DynamoDB table → handles state locking  
+
+
 cd bootstrap/backend-state
 
 terraform init
 terraform apply
-```
+
 
 ---
 
 ## 🌍 Step 2 — Deploy Environment (Dev)
 
-```bash
+Once backend is ready, infrastructure can be deployed.
+
+
 cd environments/dev
 
 terraform init
 terraform plan
 terraform apply
-```
+
+
+This step creates:
+
+- VPC (public + private subnets)  
+- Internet Gateway + NAT Gateway  
+- Route tables  
+- EKS cluster  
+- Node group (worker nodes)  
+- IAM roles and policies  
 
 ---
 
 ## 🔁 Step 3 — Destroy Infrastructure
 
-```bash
+To clean up resources and avoid AWS costs:
+
+
 terraform destroy
-```
+
 
 ---
 
 ## 🔧 Variables
 
-Update values using:
+Instead of hardcoding values, I used `terraform.tfvars`.
 
-```bash
+
 cp terraform.tfvars.example terraform.tfvars
 vim terraform.tfvars
-```
+
+
+This makes it easier to manage different environments.
 
 ---
 
 ## 🧠 Terraform Concepts Used
 
-* Remote backend (S3)
-* State locking (DynamoDB)
-* Modular structure
-* Environment-based deployment
+- Remote backend (S3)  
+- State locking (DynamoDB)  
+- Modular structure  
+- Environment-based deployment  
+- Provider versioning  
 
 ---
 
-## ⚠️ Best Practices
+## ⚠️ Best Practices Followed
 
-* Always run `terraform plan` before apply
-* Never commit state files
-* Use separate environments (dev, prod)
-* Use versioned providers
-
----
-
-## 🧹 Cleanup
-
-To reset local Terraform state:
-
-```bash
-rm -rf .terraform
-terraform init
-```
+- Always ran `terraform plan` before `apply`  
+- Never committed state files  
+- Used separate environment structure (`dev`, can extend to `prod`)  
+- Used remote backend instead of local state  
 
 ---
 
-## 👨‍💻 Author
+## ⚠️ Challenges I faced
 
-Ram Polarapu
-DevOps / Cloud Engineer
+This is where most of the real learning happened.
 
+### VPC deletion issues
+- `terraform destroy` was failing  
+- Root cause → dependent resources like NAT Gateway and ENIs  
+
+Fix:
+- Identified dependencies using AWS CLI  
+- Removed resources manually before destroy  
+
+---
+
+### Subnet tagging issues
+- ALB was not getting created in EKS  
+
+Root cause:
+- Missing required subnet tags  
+
+Fix:
+
+kubernetes.io/role/elb = 1
+kubernetes.io/role/internal-elb = 1
+
+
+---
+
+### IAM / EKS permission issues
+- EKS components failed during setup  
+
+Root cause:
+- Incorrect IAM roles / trust relationships  
+
+Fix:
+- Updated IAM role policies  
+- Verified OIDC provider configuration  
+
+---
+
+## 🧪 Useful Troubleshooting Commands
+
+Check VPC
+
+aws ec2 describe-vpcs
+
+Check subnets
+
+aws ec2 describe-subnets
+
+Check load balancers
+
+aws elbv2 describe-load-balancers
+
+Check network interfaces
+
+aws ec2 describe-network-interfaces
+
+
+---
+
+## 🎯 Outcome
+
+- Fully working AWS infrastructure  
+- EKS cluster ready for application deployment  
+- Proper networking setup (public + private subnets)  
+- IAM configured for Kubernetes workloads  
+- Reusable Terraform structure  
+
+---
+
+## 👨‍💻
+
+Ram Polarapu  
